@@ -1,0 +1,34 @@
+FROM debian
+MAINTAINER Mike Loeffler <michael.t.loeffler@gmail.com>
+
+RUN apt-get update \
+ && apt-get -y -q install curl build-essential \
+ && mkdir /build \
+ && cd /build \
+ && curl -LsSO http://github.com/msoap/shell2http/releases/download/1.13/shell2http-1.13.linux.arm.tar.gz \
+ && echo '2dc46343fd721f0798f72b2eb3ce51b372ded2c7 *shell2http-1.13.linux.arm.tar.gz' | sha1sum -c - \
+ && tar xvzf shell2http-1.13.linux.arm.tar.gz shell2http \
+ && mv shell2http /usr/local/bin \
+ && curl -LsSO http://www.heyu.org/download/heyu-2.11-rc1.tar.gz \
+ && echo 'f02fa53b866343f05d57a2ac87c7f7b39c786295 *heyu-2.11-rc1.tar.gz' | sha1sum -c - \
+ && tar xzf heyu-2.11-rc1.tar.gz \
+ && cd heyu-2.11-rc1 \
+ && ./configure --sysconfdir=/etc \
+ && make \
+ && make install \
+ && cd / \
+ && apt-get -y -q purge curl build-essential \
+ && apt -y -q autoremove \
+ && rm -rf /build /etc/ssl /var/cache/apt/*
+
+RUN cp -r /etc/heyu /etc/heyu.default \
+ && mkdir -p /usr/local/var/tmp/heyu \
+ && mkdir -p /usr/local/var/lock \
+ && chmod 777 /usr/local/var/tmp/heyu \
+ && chmod 777 /usr/local/var/lock
+
+VOLUME /etc/heyu
+EXPOSE 80
+
+COPY heyu-run.sh /usr/local/bin/heyu-run
+CMD heyu-run
